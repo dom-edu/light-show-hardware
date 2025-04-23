@@ -134,6 +134,8 @@ function generatePulseFrames(frame, cycles = 4) {
 
 export default function HexExporter() {
   const [hex, setHex] = useState("");
+  const [size, setSize] = useState(4);
+  const [radius, setRadius] = useState(3.0);
 
   const handleGenerate = (type) => {
     let frames = [];
@@ -148,10 +150,10 @@ export default function HexExporter() {
         frames = [createHeartFrame()];
         break;
       case "sphere":
-        frames = [createSphereFrame()];
+        frames = [createSphereFrame(radius)];
         break;
       case "cube":
-        frames = [createCubeFrame()];
+        frames = [createCubeFrame(size)];
         break;
       case "pyramid":
         frames = [createPyramidFrame()];
@@ -160,7 +162,7 @@ export default function HexExporter() {
         frames = Array.from({ length: 8 }, (_, i) => createWaveFrame(i));
         break;
       case "pulse":
-        frames = generatePulseFrames(createSphereFrame());
+        frames = generatePulseFrames(createSphereFrame(radius));
         break;
       default:
         frames = generateDummyFrames();
@@ -190,6 +192,33 @@ export default function HexExporter() {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">iCube 3D8S HEX Exporter</h1>
+
+      <div className="mb-4 space-y-2">
+        <div>
+          <label className="mr-2">Cube Size:</label>
+          <input
+            type="range"
+            min="1"
+            max="8"
+            value={size}
+            onChange={(e) => setSize(parseInt(e.target.value))}
+          />
+          <span className="ml-2">{size}</span>
+        </div>
+        <div>
+          <label className="mr-2">Sphere Radius:</label>
+          <input
+            type="range"
+            min="1"
+            max="5"
+            step="0.1"
+            value={radius}
+            onChange={(e) => setRadius(parseFloat(e.target.value))}
+          />
+          <span className="ml-2">{radius.toFixed(1)}</span>
+        </div>
+      </div>
+
       <div className="space-x-2 mb-4">
         <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">All On</button>
         <button onClick={() => handleGenerate("off")} className="bg-blue-500 text-white px-4 py-2 rounded">All Off</button>
@@ -208,9 +237,11 @@ export default function HexExporter() {
           Download .hex
         </button>
       </div>
+
       <pre className="mt-4 bg-gray-100 p-2 rounded text-sm overflow-auto max-h-96">
         {hex || "Click a shape or animation to generate .hex output..."}
       </pre>
     </div>
   );
 }
+
