@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
+import * as THREE from "three";
+import { Canvas } from "@react-three/fiber";
 
 function computeChecksum(byteCount, address, recordType, dataBytes) {
   const addrHigh = (address >> 8) & 0xff;
@@ -132,10 +134,35 @@ function generatePulseFrames(frame, cycles = 4) {
   return result;
 }
 
+function VoxelViewer({ frame }) {
+  const lit = [];
+  frame.forEach((layer, x) =>
+    layer.forEach((row, y) =>
+      row.forEach((v, z) => {
+        if (v) lit.push([x, y, z]);
+      })
+    )
+  );
+
+  return (
+    <Canvas style={{ width: 300, height: 300 }} camera={{ position: [10, 10, 10], fov: 45 }}>
+      <ambientLight intensity={0.8} />
+      <pointLight position={[15, 15, 15]} />
+      {lit.map(([x, y, z], i) => (
+        <mesh key={i} position={[x - 3.5, y - 3.5, z - 3.5]}>
+          <boxGeometry args={[0.8, 0.8, 0.8]} />
+          <meshStandardMaterial color="red" />
+        </mesh>
+      ))}
+    </Canvas>
+  );
+}
+
 export default function HexExporter() {
   const [hex, setHex] = useState("");
   const [size, setSize] = useState(4);
   const [radius, setRadius] = useState(3.0);
+  const [preview, setPreview] = useState(createAllOffFrame());
 
   const handleGenerate = (type) => {
     let frames = [];
@@ -167,6 +194,7 @@ export default function HexExporter() {
       default:
         frames = generateDummyFrames();
     }
+    setPreview(frames[0]);
     const hexData = toIntelHex(frames);
     setHex(hexData);
   };
@@ -219,7 +247,9 @@ export default function HexExporter() {
         </div>
       </div>
 
-      <div className="space-x-2 mb-4">
+      <VoxelViewer frame={preview} />
+
+      <div className="space-x-2 my-4">
         <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">All On</button>
         <button onClick={() => handleGenerate("off")} className="bg-blue-500 text-white px-4 py-2 rounded">All Off</button>
         <button onClick={() => handleGenerate("heart")} className="bg-blue-500 text-white px-4 py-2 rounded">Heart</button>
@@ -244,4 +274,3 @@ export default function HexExporter() {
     </div>
   );
 }
-
