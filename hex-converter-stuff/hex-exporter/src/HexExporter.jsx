@@ -65,6 +65,73 @@ function createHeartFrame() {
   );
 }
 
+function createSphereFrame(radius = 3.0, center = [3.5, 3.5, 3.5]) {
+  const [cx, cy, cz] = center;
+  return Array.from({ length: 8 }, (_, x) =>
+    Array.from({ length: 8 }, (_, y) =>
+      Array.from({ length: 8 }, (_, z) =>
+        (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2 <= radius ** 2 ? 1 : 0
+      )
+    )
+  );
+}
+
+function createCubeFrame(size = 4) {
+  const offset = Math.floor((8 - size) / 2);
+  return Array.from({ length: 8 }, (_, x) =>
+    Array.from({ length: 8 }, (_, y) =>
+      Array.from({ length: 8 }, (_, z) =>
+        x >= offset && x < offset + size &&
+        y >= offset && y < offset + size &&
+        z >= offset && z < offset + size ? 1 : 0
+      )
+    )
+  );
+}
+
+function createPyramidFrame() {
+  const frame = createAllOffFrame();
+  for (let z = 0; z < 4; z++) {
+    for (let y = z; y < 8 - z; y++) {
+      for (let x = z; x < 8 - z; x++) {
+        frame[x][y][z] = 1;
+      }
+    }
+  }
+  return frame;
+}
+
+function createWaveFrame(step = 0) {
+  return Array.from({ length: 8 }, (_, x) =>
+    Array.from({ length: 8 }, (_, y) =>
+      Array.from({ length: 8 }, (_, z) => (z === (x + y + step) % 8 ? 1 : 0))
+    )
+  );
+}
+
+function generatePulseFrames(frame, cycles = 4) {
+  const result = [];
+  for (let i = 1; i <= cycles; i++) {
+    const scale = i / cycles;
+    const shrunk = frame.map(layer =>
+      layer.map(row =>
+        row.map(bit => (Math.random() < scale ? bit : 0))
+      )
+    );
+    result.push(shrunk);
+  }
+  for (let i = cycles - 1; i >= 1; i--) {
+    const scale = i / cycles;
+    const shrunk = frame.map(layer =>
+      layer.map(row =>
+        row.map(bit => (Math.random() < scale ? bit : 0))
+      )
+    );
+    result.push(shrunk);
+  }
+  return result;
+}
+
 export default function HexExporter() {
   const [hex, setHex] = useState("");
 
@@ -79,6 +146,21 @@ export default function HexExporter() {
         break;
       case "heart":
         frames = [createHeartFrame()];
+        break;
+      case "sphere":
+        frames = [createSphereFrame()];
+        break;
+      case "cube":
+        frames = [createCubeFrame()];
+        break;
+      case "pyramid":
+        frames = [createPyramidFrame()];
+        break;
+      case "wave":
+        frames = Array.from({ length: 8 }, (_, i) => createWaveFrame(i));
+        break;
+      case "pulse":
+        frames = generatePulseFrames(createSphereFrame());
         break;
       default:
         frames = generateDummyFrames();
@@ -109,18 +191,15 @@ export default function HexExporter() {
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">iCube 3D8S HEX Exporter</h1>
       <div className="space-x-2 mb-4">
-        <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">
-          All On
-        </button>
-        <button onClick={() => handleGenerate("off")} className="bg-blue-500 text-white px-4 py-2 rounded">
-          All Off
-        </button>
-        <button onClick={() => handleGenerate("heart")} className="bg-blue-500 text-white px-4 py-2 rounded">
-          Heart
-        </button>
-        <button onClick={() => handleGenerate("random")} className="bg-blue-500 text-white px-4 py-2 rounded">
-          Random
-        </button>
+        <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">All On</button>
+        <button onClick={() => handleGenerate("off")} className="bg-blue-500 text-white px-4 py-2 rounded">All Off</button>
+        <button onClick={() => handleGenerate("heart")} className="bg-blue-500 text-white px-4 py-2 rounded">Heart</button>
+        <button onClick={() => handleGenerate("sphere")} className="bg-blue-500 text-white px-4 py-2 rounded">Sphere</button>
+        <button onClick={() => handleGenerate("cube")} className="bg-blue-500 text-white px-4 py-2 rounded">Cube</button>
+        <button onClick={() => handleGenerate("pyramid")} className="bg-blue-500 text-white px-4 py-2 rounded">Pyramid</button>
+        <button onClick={() => handleGenerate("wave")} className="bg-blue-500 text-white px-4 py-2 rounded">Wave</button>
+        <button onClick={() => handleGenerate("pulse")} className="bg-purple-600 text-white px-4 py-2 rounded">Pulse</button>
+        <button onClick={() => handleGenerate("random")} className="bg-blue-500 text-white px-4 py-2 rounded">Random</button>
         <button
           onClick={handleDownload}
           className="bg-green-600 text-white px-4 py-2 rounded"
@@ -130,7 +209,7 @@ export default function HexExporter() {
         </button>
       </div>
       <pre className="mt-4 bg-gray-100 p-2 rounded text-sm overflow-auto max-h-96">
-        {hex || "Click a shape button to generate .hex output..."}
+        {hex || "Click a shape or animation to generate .hex output..."}
       </pre>
     </div>
   );
