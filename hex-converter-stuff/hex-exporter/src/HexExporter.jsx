@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { saveAs } from "file-saver";
 import * as THREE from "three";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
+
+
 
 function computeChecksum(byteCount, address, recordType, dataBytes) {
   const addrHigh = (address >> 8) & 0xff;
@@ -134,8 +136,19 @@ function generatePulseFrames(frame, cycles = 4) {
   return result;
 }
 
-function VoxelViewer({ frame }) {
+function VoxelViewer({ frames }) {
+  const [frameIdx, setFrameIdx] = useState(0);
+
+  useEffect(() => {
+    if (!frames || frames.length === 0) return;
+    const interval = setInterval(() => {
+      setFrameIdx((prev) => (prev + 1) % frames.length);
+    }, 300);
+    return () => clearInterval(interval);
+  }, [frames]);
+
   const lit = [];
+  const frame = frames[frameIdx];
   frame.forEach((layer, x) =>
     layer.forEach((row, y) =>
       row.forEach((v, z) => {
@@ -162,7 +175,7 @@ export default function HexExporter() {
   const [hex, setHex] = useState("");
   const [size, setSize] = useState(4);
   const [radius, setRadius] = useState(3.0);
-  const [preview, setPreview] = useState(createAllOffFrame());
+  const [previewFrames, setPreviewFrames] = useState([createAllOffFrame()]);
 
   const handleGenerate = (type) => {
     let frames = [];
@@ -194,7 +207,7 @@ export default function HexExporter() {
       default:
         frames = generateDummyFrames();
     }
-    setPreview(frames[0]);
+    setPreviewFrames(frames);
     const hexData = toIntelHex(frames);
     setHex(hexData);
   };
@@ -247,7 +260,7 @@ export default function HexExporter() {
         </div>
       </div>
 
-      <VoxelViewer frame={preview} />
+      <VoxelViewer frames={previewFrames} />
 
       <div className="space-x-2 my-4">
         <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">All On</button>
