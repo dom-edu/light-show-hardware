@@ -37,8 +37,55 @@ function toIntelHex(frames, startAddress = 0x8000) {
   return lines.join("\n");
 }
 
+function createAllOffFrame() {
+  return Array.from({ length: 8 }, () =>
+    Array.from({ length: 8 }, () => Array(8).fill(0))
+  );
+}
+
+function createAllOnFrame() {
+  return Array.from({ length: 8 }, () =>
+    Array.from({ length: 8 }, () => Array(8).fill(1))
+  );
+}
+
+function createHeartFrame() {
+  const heart2D = [
+    "00011000",
+    "00111100",
+    "01111110",
+    "11111111",
+    "11111111",
+    "01111110",
+    "00111100",
+    "00011000"
+  ];
+  return Array.from({ length: 8 }, (_, z) =>
+    heart2D.map(row => row.split('').map(bit => parseInt(bit)))
+  );
+}
+
 export default function HexExporter() {
   const [hex, setHex] = useState("");
+
+  const handleGenerate = (type) => {
+    let frames = [];
+    switch (type) {
+      case "on":
+        frames = [createAllOnFrame()];
+        break;
+      case "off":
+        frames = [createAllOffFrame()];
+        break;
+      case "heart":
+        frames = [createHeartFrame()];
+        break;
+      default:
+        frames = generateDummyFrames();
+    }
+    const hexData = toIntelHex(frames);
+    setHex(hexData);
+  };
 
   function generateDummyFrames(count = 4) {
     const frames = [];
@@ -53,12 +100,6 @@ export default function HexExporter() {
     return frames;
   }
 
-  const handleGenerate = () => {
-    const frames = generateDummyFrames();
-    const hexData = toIntelHex(frames);
-    setHex(hexData);
-  };
-
   const handleDownload = () => {
     const blob = new Blob([hex], { type: "text/plain;charset=utf-8" });
     saveAs(blob, "led_cube_output.hex");
@@ -67,20 +108,30 @@ export default function HexExporter() {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">iCube 3D8S HEX Exporter</h1>
-      <button onClick={handleGenerate} className="bg-blue-500 text-white px-4 py-2 rounded mr-2">
-        Generate HEX
-      </button>
-      <button
-        onClick={handleDownload}
-        className="bg-green-600 text-white px-4 py-2 rounded"
-        disabled={!hex}
-      >
-        Download .hex
-      </button>
+      <div className="space-x-2 mb-4">
+        <button onClick={() => handleGenerate("on")} className="bg-blue-500 text-white px-4 py-2 rounded">
+          All On
+        </button>
+        <button onClick={() => handleGenerate("off")} className="bg-blue-500 text-white px-4 py-2 rounded">
+          All Off
+        </button>
+        <button onClick={() => handleGenerate("heart")} className="bg-blue-500 text-white px-4 py-2 rounded">
+          Heart
+        </button>
+        <button onClick={() => handleGenerate("random")} className="bg-blue-500 text-white px-4 py-2 rounded">
+          Random
+        </button>
+        <button
+          onClick={handleDownload}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+          disabled={!hex}
+        >
+          Download .hex
+        </button>
+      </div>
       <pre className="mt-4 bg-gray-100 p-2 rounded text-sm overflow-auto max-h-96">
-        {hex || "Click 'Generate HEX' to preview output..."}
+        {hex || "Click a shape button to generate .hex output..."}
       </pre>
     </div>
   );
 }
-
